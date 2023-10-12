@@ -13,6 +13,8 @@ struct job
   int length;
   int tickets;
   struct job *next;
+  int startTime;
+  int endTime;
 };
 
 /*** Globals ***/
@@ -22,6 +24,116 @@ int seed = 100;
 struct job *head = NULL;
 
 /*** Globals End ***/
+
+/*Function to sort linked list by arrival time*/
+void sort_by_arrival(struct job **head_ptr)
+{
+  struct job *current, *next;
+  int swapped;
+
+  do
+  {
+    swapped = 0;
+    current = *head_ptr;
+
+    while (current->next != NULL)
+    {
+      next = current->next;
+      if (current->arrival > next->arrival)
+      {
+        // Swap data
+        int temp_id = current->id;
+        int temp_arrival = current->arrival;
+        int temp_length = current->length;
+        int temp_tickets = current->tickets;
+
+        current->id = next->id;
+        current->arrival = next->arrival;
+        current->length = next->length;
+        current->tickets = next->tickets;
+
+        next->id = temp_id;
+        next->arrival = temp_arrival;
+        next->length = temp_length;
+        next->tickets = temp_tickets;
+
+        swapped = 1;
+      }
+      current = current->next;
+    }
+  } while (swapped);
+}
+
+/*Function to sort the linked list based on length*/
+void sort_by_length(struct job **head_ptr)
+{
+  struct job *current, *next;
+  int swapped;
+
+  do
+  {
+    swapped = 0;
+    current = *head_ptr;
+
+    while (current->next != NULL)
+    {
+      next = current->next;
+      if (current->length > next->length)
+      {
+        // Swap data
+        int temp_id = current->id;
+        int temp_arrival = current->arrival;
+        int temp_length = current->length;
+        int temp_tickets = current->tickets;
+
+        current->id = next->id;
+        current->arrival = next->arrival;
+        current->length = next->length;
+        current->tickets = next->tickets;
+
+        next->id = temp_id;
+        next->arrival = temp_arrival;
+        next->length = temp_length;
+        next->tickets = temp_tickets;
+
+        swapped = 1;
+      }
+      current = current->next;
+    }
+  } while (swapped);
+}
+
+/*Function to copy linked list*/
+struct job *copy_linked_list(struct job *original)
+{
+  struct job *new_head = NULL;
+  struct job *tail = NULL;
+
+  while (original != NULL)
+  {
+    struct job *new_node = (struct job *)malloc(sizeof(struct job));
+    new_node->id = original->id;
+    new_node->arrival = original->arrival;
+    new_node->length = original->length;
+    new_node->tickets = original->tickets;
+    new_node->next = NULL;
+
+    if (new_head == NULL)
+    {
+      new_head = new_node;
+      tail = new_node;
+    }
+    else
+    {
+      tail->next = new_node;
+      tail = new_node;
+    }
+
+    original = original->next;
+  }
+
+  return new_head;
+}
 
 /*Function to append a new job to the list*/
 void append(int id, int arrival, int length, int tickets)
@@ -97,9 +209,55 @@ void read_workload_file(char *filename)
 
 void policy_STCF(struct job *head, int slice)
 {
-  // TODO: Fill this in
+  int current_time = 0;
 
-  return;
+  printf("Execution trace with STCF:\n");
+
+  while (head != NULL)
+  {
+    struct job *current = head;
+    struct job *shortest = NULL;
+
+    // Find the job with the shortest remaining duration
+    while (current != NULL)
+    {
+      if (current->arrival <= current_time)
+      {
+        if (shortest == NULL || current->length < shortest->length)
+        {
+          shortest = current;
+        }
+      }
+      current = current->next;
+    }
+
+    if (shortest == NULL)
+    {
+      // No jobs are ready to run at this time
+      current_time++;
+    }
+    else
+    {
+      // Run JL for S ticks
+      int run_time = (shortest->length < slice) ? shortest->length : slice;
+
+      printf("t=%d: [Job %d] arrived at [%d], ran for: [%d]\n",
+             current_time, shortest->id, shortest->arrival, run_time);
+
+      shortest->length -= run_time;
+      current_time += run_time;
+
+      // Check if the job is complete
+      if (shortest->length == 0)
+      {
+        struct job *temp = shortest;
+        head = shortest->next;
+        free(temp);
+      }
+    }
+  }
+
+  printf("End of execution with STCF.\n");
 }
 
 void analyze_STCF(struct job *head)
