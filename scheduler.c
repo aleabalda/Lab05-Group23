@@ -103,38 +103,6 @@ void sort_by_length(struct job **head_ptr)
   } while (swapped);
 }
 
-/*Function to copy linked list*/
-struct job *copy_linked_list(struct job *original)
-{
-  struct job *new_head = NULL;
-  struct job *tail = NULL;
-
-  while (original != NULL)
-  {
-    struct job *new_node = (struct job *)malloc(sizeof(struct job));
-    new_node->id = original->id;
-    new_node->arrival = original->arrival;
-    new_node->length = original->length;
-    new_node->tickets = original->tickets;
-    new_node->next = NULL;
-
-    if (new_head == NULL)
-    {
-      new_head = new_node;
-      tail = new_node;
-    }
-    else
-    {
-      tail->next = new_node;
-      tail = new_node;
-    }
-
-    original = original->next;
-  }
-
-  return new_head;
-}
-
 /*Function to append a new job to the list*/
 void append(int id, int arrival, int length, int tickets)
 {
@@ -267,28 +235,28 @@ void analyze_STCF(struct job *head)
   return;
 }
 
-policy_RR(struct job *head, int slice)
+void policy_RR(struct job *head, int slice)
 {
   // TODO: Fill this in
 
   return;
 }
 
-analyze_RR(struct job *head)
+void analyze_RR(struct job *head)
 {
   // TODO: Fill this in
 
   return;
 }
 
-policy_LT(struct job *head, int slice)
+void policy_LT(struct job *head, int slice)
 {
   // TODO: Fill this in
 
   return;
 }
 
-analyze_LT(struct job *head)
+void analyze_LT(struct job *head)
 {
   // TODO: Fill this in
 
