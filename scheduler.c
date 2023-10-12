@@ -65,15 +65,16 @@ void sort_by_arrival(struct job **head_ptr)
 }
 
 /*Function to sort the linked list based on length*/
-void sort_by_length(struct job **head_ptr)
+struct job *sort_by_length(struct job *head)
 {
+  struct job *new_head = NULL;
   struct job *current, *next;
   int swapped;
 
   do
   {
     swapped = 0;
-    current = *head_ptr;
+    current = head;
 
     while (current->next != NULL)
     {
@@ -101,6 +102,43 @@ void sort_by_length(struct job **head_ptr)
       current = current->next;
     }
   } while (swapped);
+
+  // Set the new head pointer
+  new_head = head;
+
+  return new_head;
+}
+
+/*Function to copy linked list*/
+struct job *copy_linked_list(struct job *original)
+{
+  struct job *new_head = NULL;
+  struct job *tail = NULL;
+
+  while (original != NULL)
+  {
+    struct job *new_node = (struct job *)malloc(sizeof(struct job));
+    new_node->id = original->id;
+    new_node->arrival = original->arrival;
+    new_node->length = original->length;
+    new_node->tickets = original->tickets;
+    new_node->next = NULL;
+
+    if (new_head == NULL)
+    {
+      new_head = new_node;
+      tail = new_node;
+    }
+    else
+    {
+      tail->next = new_node;
+      tail = new_node;
+    }
+
+    original = original->next;
+  }
+
+  return new_head;
 }
 
 /*Function to append a new job to the list*/
@@ -136,6 +174,39 @@ void append(int id, int arrival, int length, int tickets)
   // Add job to end of list
   prev->next = tmp;
   return;
+}
+
+/*Function to remove a node in the linked list*/
+void remove_node(struct job **head_ptr, int target_id)
+{
+  struct job *current = *head_ptr;
+  struct job *prev = NULL;
+
+  // Case: Node to be removed is the head
+  if (current != NULL && current->id == target_id)
+  {
+    *head_ptr = current->next;
+    free(current);
+    return;
+  }
+
+  // Search for the node to be removed
+  while (current != NULL && current->id != target_id)
+  {
+    prev = current;
+    current = current->next;
+  }
+
+  // If node was not found
+  if (current == NULL)
+  {
+    printf("Node with ID %d not found.\n", target_id);
+    return;
+  }
+
+  // Case: Node to be removed is in the middle or the end
+  prev->next = current->next;
+  free(current);
 }
 
 /*Function to read in the workload file and create job list*/
@@ -175,13 +246,28 @@ void read_workload_file(char *filename)
   return;
 }
 
+int get_node_count(struct job *head)
+{
+  int count = 0;
+  struct job *current = head;
+
+  while (current != NULL)
+  {
+    count++;
+    current = current->next;
+  }
+
+  return count;
+}
+
 void policy_STCF(struct job *head, int slice)
 {
   int current_time = 0;
+  int num_jobs = get_node_count(head);
 
   printf("Execution trace with STCF:\n");
 
-  while (head != NULL)
+  while (num_jobs != 0)
   {
     struct job *current = head;
     struct job *shortest = NULL;
@@ -189,7 +275,7 @@ void policy_STCF(struct job *head, int slice)
     // Find the job with the shortest remaining duration
     while (current != NULL)
     {
-      if (current->arrival <= current_time)
+      if (current->arrival <= current_time && current->length > 0)
       {
         if (shortest == NULL || current->length < shortest->length)
         {
@@ -219,8 +305,9 @@ void policy_STCF(struct job *head, int slice)
       if (shortest->length == 0)
       {
         struct job *temp = shortest;
-        head = shortest->next;
+        current = shortest->next;
         free(temp);
+        num_jobs--;
       }
     }
   }
