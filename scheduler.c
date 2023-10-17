@@ -265,7 +265,6 @@ int get_node_count(struct job *head)
 void policy_STCF(struct job *head, int slice)
 {
   struct job *copy = copy_linked_list(head);
-
   int current_time = 0;
   int num_jobs = get_node_count(copy);
 
@@ -296,16 +295,27 @@ void policy_STCF(struct job *head, int slice)
     }
     else
     {
-
-      if (shortest->startTime == -1)
-      {
-        shortest->startTime = current_time;
-      }
       // Run JL for S ticks
       int run_time = (shortest->length < slice) ? shortest->length : slice;
 
       printf("t=%d: [Job %d] arrived at [%d], ran for: [%d]\n",
              current_time, shortest->id, shortest->arrival, run_time);
+
+      // Set startime for each job
+
+      struct job *tmp = head;
+      while (tmp != NULL)
+      {
+        if (tmp->id == shortest->id)
+        {
+          if (tmp->startTime == -1)
+          {
+            tmp->startTime = current_time;
+          }
+          break; // Break regardless of whether startTime was set or not
+        }
+        tmp = tmp->next;
+      }
 
       shortest->length -= run_time;
       current_time += run_time;
@@ -313,7 +323,16 @@ void policy_STCF(struct job *head, int slice)
       // Check if the job is complete
       if (shortest->length == 0)
       {
-        shortest->completionTime = current_time;
+        tmp = head;
+        while (tmp != NULL)
+        {
+          if (tmp->id == shortest->id)
+          {
+            tmp->completionTime = current_time;
+            break;
+          }
+          tmp = tmp->next;
+        }
         struct job *temp = shortest;
         current = shortest->next;
         free(temp);
@@ -323,32 +342,38 @@ void policy_STCF(struct job *head, int slice)
   }
 
   printf("End of execution with STCF.\n");
+  // struct job *cursor = head;
+
+  // // while (cursor != NULL)
+  // // {
+  // //   printf("%d\n", cursor->id);
+  // //   printf("%d\n", cursor->startTime);
+  // //   printf("%d\n", cursor->completionTime);
+  // //   cursor = cursor->next;
+  // // }
 }
 
 void analyze_STCF(struct job *head)
 {
-  struct job *copy = copy_linked_list(head);
-  struct job *current = copy;
-
   int total_response = 0;
   int total_turnaround = 0;
   int total_wait = 0;
-  int num_jobs = get_node_count(copy);
+  int num_jobs = get_node_count(head);
 
-  while (current != NULL)
+  while (head != NULL)
   {
-    int response_time = current->startTime - current->arrival;
-    int turnaround_time = current->completionTime - current->arrival;
-    int wait_time = response_time; // Since arrival time is 0
+    int response_time = head->startTime - head->arrival;
+    int turnaround_time = head->completionTime - head->arrival;
+    int wait_time = turnaround_time - head->length;
 
     total_response += response_time;
     total_turnaround += turnaround_time;
     total_wait += wait_time;
 
     printf("Job %d -- Response time: %d  Turnaround: %d  Wait: %d\n",
-           current->id, response_time, turnaround_time, wait_time);
+           head->id, response_time, turnaround_time, wait_time);
 
-    current = current->next;
+    head = head->next;
   }
 
   double avg_response = (double)total_response / num_jobs;
