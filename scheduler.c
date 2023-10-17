@@ -14,7 +14,7 @@ struct job
   int tickets;
   struct job *next;
   int startTime;
-  int endTime;
+  int completionTime;
 };
 
 /*** Globals ***/
@@ -153,7 +153,7 @@ void append(int id, int arrival, int length, int tickets)
   tmp->arrival = arrival;
   tmp->tickets = tickets;
   tmp->startTime = -1;
-  tmp->endTime = -1;
+  tmp->completionTime = -1;
 
   // the new job is the last job
   tmp->next = NULL;
@@ -313,7 +313,7 @@ void policy_STCF(struct job *head, int slice)
       // Check if the job is complete
       if (shortest->length == 0)
       {
-        shortest->endTime = current_time;
+        shortest->completionTime = current_time;
         struct job *temp = shortest;
         current = shortest->next;
         free(temp);
@@ -328,31 +328,27 @@ void policy_STCF(struct job *head, int slice)
 void analyze_STCF(struct job *head)
 {
   struct job *copy = copy_linked_list(head);
+  struct job *current = copy;
 
   int total_response = 0;
   int total_turnaround = 0;
   int total_wait = 0;
   int num_jobs = get_node_count(copy);
 
-  while (copy != NULL)
+  while (current != NULL)
   {
-    int response_time = copy->startTime - copy->arrival;
-    int turnaround_time = copy->endTime - copy->arrival;
+    int response_time = current->startTime - current->arrival;
+    int turnaround_time = current->completionTime - current->arrival;
     int wait_time = response_time; // Since arrival time is 0
 
     total_response += response_time;
     total_turnaround += turnaround_time;
     total_wait += wait_time;
 
-    printf("%d", response_time);
-    printf("%d", turnaround_time);
-    printf("%d", wait_time);
-    printf("%d", copy->id);
-
     printf("Job %d -- Response time: %d  Turnaround: %d  Wait: %d\n",
-           copy->id, response_time, turnaround_time, wait_time);
+           current->id, response_time, turnaround_time, wait_time);
 
-    copy = copy->next;
+    current = current->next;
   }
 
   double avg_response = (double)total_response / num_jobs;
