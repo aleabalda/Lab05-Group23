@@ -152,6 +152,8 @@ void append(int id, int arrival, int length, int tickets)
   tmp->length = length;
   tmp->arrival = arrival;
   tmp->tickets = tickets;
+  tmp->startTime = -1;
+  tmp->endTime = -1;
 
   // the new job is the last job
   tmp->next = NULL;
@@ -262,14 +264,16 @@ int get_node_count(struct job *head)
 
 void policy_STCF(struct job *head, int slice)
 {
+  struct job *copy = copy_linked_list(head);
+
   int current_time = 0;
-  int num_jobs = get_node_count(head);
+  int num_jobs = get_node_count(copy);
 
   printf("Execution trace with STCF:\n");
 
   while (num_jobs != 0)
   {
-    struct job *current = head;
+    struct job *current = copy;
     struct job *shortest = NULL;
 
     // Find the job with the shortest remaining duration
@@ -292,6 +296,11 @@ void policy_STCF(struct job *head, int slice)
     }
     else
     {
+
+      if (shortest->startTime == -1)
+      {
+        shortest->startTime = current_time;
+      }
       // Run JL for S ticks
       int run_time = (shortest->length < slice) ? shortest->length : slice;
 
@@ -304,6 +313,7 @@ void policy_STCF(struct job *head, int slice)
       // Check if the job is complete
       if (shortest->length == 0)
       {
+        shortest->endTime = current_time;
         struct job *temp = shortest;
         current = shortest->next;
         free(temp);
@@ -317,9 +327,40 @@ void policy_STCF(struct job *head, int slice)
 
 void analyze_STCF(struct job *head)
 {
-  // TODO: Fill this in
+  struct job *copy = copy_linked_list(head);
 
-  return;
+  int total_response = 0;
+  int total_turnaround = 0;
+  int total_wait = 0;
+  int num_jobs = get_node_count(copy);
+
+  while (copy != NULL)
+  {
+    int response_time = copy->startTime - copy->arrival;
+    int turnaround_time = copy->endTime - copy->arrival;
+    int wait_time = response_time; // Since arrival time is 0
+
+    total_response += response_time;
+    total_turnaround += turnaround_time;
+    total_wait += wait_time;
+
+    printf("%d", response_time);
+    printf("%d", turnaround_time);
+    printf("%d", wait_time);
+    printf("%d", copy->id);
+
+    printf("Job %d -- Response time: %d  Turnaround: %d  Wait: %d\n",
+           copy->id, response_time, turnaround_time, wait_time);
+
+    copy = copy->next;
+  }
+
+  double avg_response = (double)total_response / num_jobs;
+  double avg_turnaround = (double)total_turnaround / num_jobs;
+  double avg_wait = (double)total_wait / num_jobs;
+
+  printf("Average -- Response: %.2f  Turnaround %.2f  Wait %.2f\n",
+         avg_response, avg_turnaround, avg_wait);
 }
 
 void policy_RR(struct job *head, int slice)
