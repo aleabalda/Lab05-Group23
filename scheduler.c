@@ -24,6 +24,10 @@ struct job
   int startTime;
   int completionTime;
   
+  //LT
+  int start_time;
+  int finish_time;
+  int time_run;
 
 };
 
@@ -56,6 +60,10 @@ void append(int id, int arrival, int length, int tickets)
   tmp->startTime = -1;
   tmp->completionTime = -1;
 
+  //LT
+  tmp->start_time = -1;
+  tmp->finish_time = -1;
+  tmp->time_run = 0;
 
   // the new job is the last job
   tmp->next = NULL;
@@ -429,75 +437,97 @@ void analyze_RR(struct job *head)
     
 }
 
+struct job *lottery_select(struct job *head, int current_time) {
+    int total_tickets = 0;
 
-void policy_LT(struct job *head, int slice)
-{
-  sort_by_arrival();
-
-    int currentTime = 0;
-    int total_jobs = 0; // Finding total jobs
-    int jobs_completed = 0;
-    int total_tickets = 0; // Total tickets in the system
-
-    struct job *job_counter = head;
-    while (job_counter) {
-        total_jobs++;
-        total_tickets += job_counter->tickets;
-        job_counter = job_counter->next;
+    // Count the total number of tickets for jobs that have arrived
+    struct job *current = head;
+    while (current != NULL) {
+        if (current->arrival <= current_time && current->length > 0) {
+            total_tickets += current->tickets;
+        }
+        current = current->next;
     }
 
-    printf("\nStart of execution with LT.\n\n");
+    // If no tickets, return NULL
+    if (total_tickets == 0) {
+        return NULL;
+    }
 
-    // Continue the lottery until all jobs are completed
-    while (jobs_completed < total_jobs) {
-        // Generate a random ticket
-        int winning_ticket = rand() % total_tickets + 1;
-        int ticket_counter = 0;
+    // Select a random ticket
+    int winning_ticket = rand() % total_tickets;
 
-        struct job *current = head;
-        while (current != NULL) {
-            if (current->arrival <= currentTime && current->length > 0) {
-                ticket_counter += current->tickets;
-                if (ticket_counter >= winning_ticket) {
-                    // This job wins the lottery
-                    int time_ran = (current->length > slice) ? slice : current->length;
-                    current->length -= time_ran;
-
-                    if (current->startTimes == -1) {
-                        current->startTimes = currentTime;
-                    }
-
-                    currentTime += time_ran;
-
-                    printf("  t=%d: [Job %d] arrived at [%d], ran for: [%d]\n", currentTime - time_ran, current->id, current->arrival, time_ran);
-
-                    if (current->length == 0) {
-                        current->endTime = currentTime;
-                        jobs_completed++;
-                    }
-                    break; // Exit the while loop once we find the winning job
-                }
+    // Find which job the winning ticket belongs to
+    current = head;
+    int ticket_count = 0;
+    while (current != NULL) {
+        if (current->arrival <= current_time && current->length > 0) {
+            ticket_count += current->tickets;
+            if (winning_ticket < ticket_count) {
+                return current;
             }
-            current = current->next;
+        }
+        current = current->next;
+    }
+    return NULL; // This line should never be reached.
+}
+
+void policy_LT(struct job *head, int slice) {
+    int current_time = 0;
+    int total_jobs = get_node_count(head);
+    int job_executed = 0;
+
+    printf("Execution trace with LT:\n");
+
+    while (job_executed < total_jobs) {
+        struct job *selected = lottery_select(head, current_time);
+
+        if (selected == NULL) {
+            // No jobs are ready to run at this time
+            current_time++;
+            continue;
+        }
+
+        int run_time = (selected->length < slice) ? selected->length : slice;
+        printf("t=%d: [Job %d] arrived at [%d], ran for: [%d]\n", current_time, selected->id, selected->arrival, run_time);
+
+        // Update job parameters
+        if (selected->start_time == -1) {
+            selected->start_time = current_time;
+        }
+
+        selected->length -= run_time;
+        selected->time_run += run_time;
+        current_time += run_time;
+
+        if (selected->length == 0) {
+            selected->finish_time = current_time;
+            job_executed++;
         }
     }
 
-    printf("\nEnd of execution with LT.\n");
-    return;
+    printf("End of execution with LT.\n");
 }
 
 void analyze_LT(struct job *head)
 {
-  struct job *current = head;
+    struct job *current = head;
     double total_response = 0, total_turnaround = 0, total_wait = 0;
     int count = 0;
 
-    while (current != NULL) {
-        int response_time = current->startTimes - current->arrival;
-        int turnaround_time = current->endTime - current->arrival;
-        int wait_time = turnaround_time - current->originalLength;
+    while (current != NULL)
+    {
+        // Response time: time when job first gets the CPU - arrival time
+        int response_time = current->start_time - current->arrival;
 
-        printf("Job %d -- Response time: %d  Turnaround: %d  Wait: %d\n", current->id, response_time, turnaround_time, wait_time);
+        // Turnaround time: completion time (finish_time) - arrival time
+        int turnaround_time = current->finish_time - current->arrival;
+
+        // Wait time: Turnaround time - total execution time (original length)
+        int wait_time = turnaround_time - current->time_run;
+
+        printf("Job %d -- Response time: %d  Turnaround: %d  Wait: %d\n",
+               current->id, response_time, turnaround_time, wait_time);
 
         total_response += response_time;
         total_turnaround += turnaround_time;
@@ -506,6 +536,7 @@ void analyze_LT(struct job *head)
         current = current->next;
     }
 
+    // Compute average metrics
     double avg_response = total_response / count;
     double avg_turnaround = total_turnaround / count;
     double avg_wait = total_wait / count;
@@ -513,10 +544,12 @@ void analyze_LT(struct job *head)
     printf("Average -- Response: %.2f  Turnaround %.2f  Wait %.2f\n", avg_response, avg_turnaround, avg_wait);
 }
 
+
 int main(int argc, char **argv)
 {
-  srand(seed);
-  
+
+  srand(time(NULL));
+
   if (argc < 5)
   {
     fprintf(stderr, "missing variables\n");
@@ -565,9 +598,9 @@ int main(int argc, char **argv)
     policy_LT(head, slice);
     if (analysis)
     {
-      printf("Begin analyzing STCF:\n\n");
+      printf("Begin analyzing LT:\n\n");
       analyze_LT(head);
-      printf("\nEnd analyzing STCF.\n");
+      printf("\nEnd analyzing LT.\n");
     }
 
     exit(EXIT_SUCCESS);
