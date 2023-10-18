@@ -1,9 +1,24 @@
+/*
+* File Name: scheduler.c
+* Assignment: Lab 5
+* Completed by: Sudarshan Naicker & Alessandro Baldassarre
+* Submission Date: Oct 18, 2023
+*/
+/*
+* How to Run?
+* type - "make" on the terminal to make executable file.
+* type - "make test2" for STCF analysis
+* type - "make test4" for RR analysis
+* type - "make test6" for LT analysis
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
 
 
 // TODO: Add more fields to this struct
@@ -38,9 +53,6 @@ int seed = 100;
 struct job *head = NULL;
 
 /*** Globals End ***/
-
-
-
 void append(int id, int arrival, int length, int tickets)
 {
   // create a new struct and initialize it with the input data
@@ -88,8 +100,6 @@ void append(int id, int arrival, int length, int tickets)
   return;
 }
 
-
-
 void read_workload_file(char *filename)
 {
   int id = 0;
@@ -112,10 +122,6 @@ void read_workload_file(char *filename)
     length = strtok(NULL, ",\n");
     tickets += 100;
 
-
-    
-
-
     // Make sure neither arrival nor length are null.
     assert(arrival != NULL && length != NULL);
 
@@ -126,11 +132,11 @@ void read_workload_file(char *filename)
 
   // Make sure we read in at least one job
   assert(id > 0);
-
   return;
 }
 
-// New functions
+
+// ...............................New functions........................................
 
 
 void sort_by_arrival() {
@@ -448,12 +454,10 @@ struct job *lottery_select(struct job *head, int current_time) {
         }
         current = current->next;
     }
-
     // If no tickets, return NULL
     if (total_tickets == 0) {
         return NULL;
     }
-
     // Select a random ticket
     int winning_ticket = rand() % total_tickets;
 
