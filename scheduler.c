@@ -342,15 +342,6 @@ void policy_STCF(struct job *head, int slice)
   }
 
   printf("End of execution with STCF.\n");
-  // struct job *cursor = head;
-
-  // // while (cursor != NULL)
-  // // {
-  // //   printf("%d\n", cursor->id);
-  // //   printf("%d\n", cursor->startTime);
-  // //   printf("%d\n", cursor->completionTime);
-  // //   cursor = cursor->next;
-  // // }
 }
 
 void analyze_STCF(struct job *head)
