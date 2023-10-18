@@ -188,7 +188,7 @@ void policy_RR(struct job *head, int slice) {
   {
     current = head;
     jobs_ran_this_round = 0;
-    
+
     while (current != NULL)
     {
       if (current->arrival <= currentTime && current->length != 0)
@@ -206,7 +206,7 @@ void policy_RR(struct job *head, int slice) {
           job_executed++;
         }
 
-        printf("job exec%d", job_executed);
+        
         printf("  t=%d: [Job %d] arrived at [%d], ran for: [%d]\n", currentTime, current->id, current->arrival, time_ran);
         
         if (current->startTime == -1) {
@@ -244,8 +244,6 @@ void analyze_RR(struct job *head)
     double total_response = 0, total_turnaround = 0, total_wait = 0;
     int count = 0;
 
-    printf("\nBegin analyzing RR:\n");
-
     while (current != NULL)
     {
         // Response time: time when job first gets the CPU - arrival time
@@ -273,7 +271,7 @@ void analyze_RR(struct job *head)
     double avg_wait = total_wait / count;
 
     printf("Average -- Response: %.2f  Turnaround %.2f  Wait %.2f\n", avg_response, avg_turnaround, avg_wait);
-    printf("\nEnd analyzing RR.\n");
+    
 }
 
 
